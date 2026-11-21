@@ -1,0 +1,19 @@
+{
+  "name": "prismorawebs",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PrismoraWebs portfolio \u2014 Cloudflare Worker with secure admin, KV content and SMTP contact form",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node test/smtp.test.mjs",
+    "local": "node --import ./local/register.mjs local/server.mjs"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

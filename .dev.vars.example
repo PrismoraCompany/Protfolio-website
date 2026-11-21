@@ -1,0 +1,9 @@
+# Copy to .dev.vars for local `npm run dev`. NEVER commit .dev.vars.
+ADMIN_PASSWORD=change-me-to-a-long-passphrase
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=prismorawebs@gmail.com
+SMTP_PASS=your-16-char-gmail-app-password
+SMTP_FROM=prismorawebs@gmail.com
+CONTACT_TO=prismorawebs@gmail.com
+# SMTP_SECURE=true   # only if your provider uses implicit TLS on a port other than 465

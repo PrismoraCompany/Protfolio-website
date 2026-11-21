@@ -1,0 +1,22 @@
+{
+  // PrismoraWebs — Cloudflare Worker (API + static site)
+  "name": "prismorawebs",
+  "main": "src/worker.js",
+  "compatibility_date": "2025-11-01",
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": true
+  },
+  // KV stores the website text edited from the admin panel.
+  // No id needed: Wrangler creates it automatically on first deploy (wrangler >= 4.45).
+  "kv_namespaces": [{ "binding": "CONTENT" }],
+  "observability": { "enabled": true }
+
+  // After the first successful deploy you may attach your domain from here instead of the dashboard:
+  // ,"routes": [
+  //   { "pattern": "prismora.space", "custom_domain": true },
+  //   { "pattern": "www.prismora.space", "custom_domain": true }
+  // ]
+}
