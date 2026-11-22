@@ -1,7 +1,9 @@
-import { sendMail, smtpConfigured, smtpConfig, splitRecipients } from './smtp.js';
+import { sendMail, smtpConfigured, smtpConfig, splitRecipients, getSmtpConfig, isSmtpConfigured } from './smtp.js';
 
 export const ADMIN_PATH = '/control-of-the-website';
-const SESSION_HOURS = 12;
+const SESSION_DAYS = 15;
+const SESSION_HOURS = SESSION_DAYS * 24; // 15 days = 360 hours
+const SESSION_SECONDS = SESSION_DAYS * 24 * 3600; // 1,296,000 seconds
 const MAX_CONTENT_BYTES = 900_000;
 const enc = new TextEncoder();
 
@@ -40,13 +42,36 @@ async function safeEqual(a, b) { // constant-time comparison of two strings
   return d === 0;
 }
 
+/* ---------- time-based patterned security code (rotates every 60 seconds) ---------- */
+export async function generateTimeCode(secret, stepOffset = 0) {
+  const step = Math.floor(Date.now() / 60000) + stepOffset;
+  const rawKey = await crypto.subtle.digest('SHA-256', enc.encode(`pw-totp-v1|${secret}`));
+  const key = await crypto.subtle.importKey('raw', rawKey, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`step:${step}`));
+  const view = new DataView(sig);
+  const code = ((view.getUint32(0) >>> 0) % 900000 + 100000).toString();
+  return code;
+}
+
+export async function verifyTimeCode(code, secret) {
+  if (!code || typeof code !== 'string') return false;
+  const cleanCode = code.trim().replace(/\s+/g, '');
+  if (!/^\d{6}$/.test(cleanCode)) return false;
+  // Check current minute window, -1 window, and +1 window (grace period for slight clock drift)
+  for (const offset of [0, -1, 1]) {
+    const expected = await generateTimeCode(secret, offset);
+    if (await safeEqual(cleanCode, expected)) return true;
+  }
+  return false;
+}
+
 /* ---------- sessions: signed, expiring, HttpOnly cookie ---------- */
 async function hmacKey(env) {
   const raw = await crypto.subtle.digest('SHA-256', enc.encode(`pw-session-v1|${env.SESSION_SECRET || ''}|${env.ADMIN_PASSWORD}`));
   return crypto.subtle.importKey('raw', raw, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign', 'verify']);
 }
 async function makeToken(env) {
-  const payload = b64url(enc.encode(JSON.stringify({ exp: Date.now() + SESSION_HOURS * 3600e3, n: crypto.randomUUID() })));
+  const payload = b64url(enc.encode(JSON.stringify({ exp: Date.now() + SESSION_SECONDS * 1000, n: crypto.randomUUID() })));
   const sig = await crypto.subtle.sign('HMAC', await hmacKey(env), enc.encode(payload));
   return `${payload}.${b64url(sig)}`;
 }
@@ -62,7 +87,7 @@ async function isAuthed(request, env) {
     return JSON.parse(new TextDecoder().decode(unb64url(payload))).exp > Date.now();
   } catch { return false; }
 }
-const cookie = (val, maxAge) => `pw_session=${val}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Strict`;
+const cookie = (val, maxAge = SESSION_SECONDS) => `pw_session=${val}; Max-Age=${maxAge}; Path=/; HttpOnly; Secure; SameSite=Strict`;
 
 /* ---------- rate limiting (KV, falls back to memory) ---------- */
 const memHits = new Map();
@@ -141,16 +166,39 @@ async function api(request, env, url) {
 
   if (method !== 'GET' && !sameOriginOk(request, url)) return json({ error: 'Forbidden' }, 403);
 
-  if (path === '/api/session' && method === 'GET')
-    return json({ authed: await isAuthed(request, env), configured: !!env.ADMIN_PASSWORD });
+  if (path === '/api/session' && method === 'GET') {
+    const adminEmail = (env.ADMIN_EMAIL || env.SMTP_USER || 'prismorawebs@gmail.com').trim().toLowerCase();
+    return json({
+      authed: await isAuthed(request, env),
+      configured: !!env.ADMIN_PASSWORD,
+      adminEmailHint: adminEmail.replace(/^(.)(.*)(@.*)$/, '$1***$3'),
+    });
+  }
 
   if (path === '/api/login' && method === 'POST') {
     if (!env.ADMIN_PASSWORD) return json({ error: 'Admin password is not configured on the server yet.' }, 503);
     if (!(await allow(env, 'login:' + ip, 5, 900))) return json({ error: 'Too many attempts. Try again in 15 minutes.' }, 429);
     let body; try { body = await readJson(request, 2000); } catch (e) { return json({ error: e.message }, e.status || 400); }
-    const ok = await safeEqual(str(body.password, 200), env.ADMIN_PASSWORD);
-    if (!ok) { await new Promise((r) => setTimeout(r, 400 + Math.random() * 400)); return json({ error: 'Wrong password.' }, 401); }
-    return json({ ok: true }, 200, { 'set-cookie': cookie(await makeToken(env), SESSION_HOURS * 3600) });
+
+    const adminEmail = (env.ADMIN_EMAIL || env.SMTP_USER || 'prismorawebs@gmail.com').trim().toLowerCase();
+    const inputEmail = str(body.email, 200).toLowerCase();
+    const inputPass = str(body.password, 200);
+    const inputCode = str(body.code, 20);
+
+    const emailOk = await safeEqual(inputEmail, adminEmail);
+    const passOk = await safeEqual(inputPass, env.ADMIN_PASSWORD);
+    const codeOk = await verifyTimeCode(inputCode, env.ADMIN_CODE_KEY || env.ADMIN_PASSWORD);
+
+    if (!emailOk || !passOk) {
+      await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
+      return json({ error: 'Incorrect email or password.' }, 401);
+    }
+    if (!codeOk) {
+      await new Promise((r) => setTimeout(r, 300 + Math.random() * 300));
+      return json({ error: 'Invalid or expired 6-digit security code. Check the current code.' }, 401);
+    }
+
+    return json({ ok: true }, 200, { 'set-cookie': cookie(await makeToken(env), SESSION_SECONDS) });
   }
 
   if (path === '/api/logout' && method === 'POST') return json({ ok: true }, 200, { 'set-cookie': cookie('', 0) });
@@ -162,7 +210,7 @@ async function api(request, env, url) {
     if (name.length < 2 || !EMAIL_RE.test(email) || message.length < 10) return json({ error: 'Please fill in your name, a valid email and a message (10+ characters).' }, 400);
     if (Date.now() - Number(b.t || 0) < 2500) return json({ error: 'Please try again.' }, 400); // too fast = bot
     if (!(await allow(env, 'contact:' + ip, 5, 3600))) return json({ error: 'Too many messages. Please try again later.' }, 429);
-    if (!smtpConfigured(env)) return json({ error: 'Email is temporarily unavailable. Please email us directly.' }, 503);
+    if (!(await isSmtpConfigured(env))) return json({ error: 'Email is temporarily unavailable. Please email us directly.' }, 503);
     try {
       await sendMail(env, {
         subject: `New website enquiry — ${service || 'General'} — ${name}`,
@@ -200,13 +248,55 @@ async function api(request, env, url) {
     return json({ ok: true });
   }
   if (path === '/api/admin/status' && method === 'GET') {
-    const c = smtpConfig(env); const mask = (e) => splitRecipients(e).map((x) => x.replace(/^(.).*(@.*)$/, '$1***$2')).join(', ');
-    return json({ kv: !!env.CONTENT, smtp: smtpConfigured(env), smtpHost: c.host || '', smtpPort: c.port, to: mask(c.to), from: mask(c.from) });
+    const c = await getSmtpConfig(env);
+    return json({
+      kv: !!env.CONTENT,
+      smtp: !!(c.host && c.user && c.pass && c.from && c.to),
+      smtpHost: c.host || '',
+      smtpPort: c.port || 465,
+      smtpSecure: !!c.secure,
+      smtpUser: c.user || '',
+      to: c.to || '',
+      from: c.from || '',
+      fromName: c.fromName || '',
+      configuredVia: c.configuredVia,
+      hasPass: !!c.pass,
+    });
+  }
+  if (path === '/api/admin/smtp' && method === 'PUT') {
+    if (!env.CONTENT) return json({ error: 'KV storage is not connected.' }, 503);
+    let body; try { body = await readJson(request, 10_000); } catch (e) { return json({ error: e.message }, e.status || 400); }
+    const existing = await getSmtpConfig(env);
+    const host = str(body.host, 200);
+    const port = parseInt(body.port || '465', 10);
+    const secure = body.secure === true || body.secure === 'true' || port === 465;
+    const user = str(body.user, 200);
+    const pass = body.pass ? str(body.pass, 200) : existing.pass;
+    const from = str(body.from, 200) || user;
+    const fromName = str(body.fromName, 200) || 'PrismoraWebs';
+    const to = str(body.to, 500) || user;
+
+    if (!host || !user || !pass) {
+      return json({ error: 'Please provide SMTP Host, Sender Email, and App Password.' }, 400);
+    }
+    const rcpts = splitRecipients(to);
+    if (!rcpts.length) {
+      return json({ error: 'Please provide at least one valid recipient email in "Send enquiries to".' }, 400);
+    }
+
+    const newCfg = { host, port, secure, user, pass, from, fromName, to };
+    await env.CONTENT.put('smtp_config', JSON.stringify(newCfg));
+    return json({ ok: true, to: rcpts.join(', ') });
   }
   if (path === '/api/admin/test-email' && method === 'POST') {
     if (!(await allow(env, 'test:' + ip, 5, 900))) return json({ error: 'Slow down — try again in a few minutes.' }, 429);
-    try { await sendMail(env, { subject: 'PrismoraWebs — SMTP test', text: 'SMTP is working. This is a test email sent from your admin panel.' }); }
-    catch (e) { return json({ error: e.message }, 502); }
+    try {
+      const cfg = await getSmtpConfig(env);
+      await sendMail(env, {
+        subject: 'PrismoraWebs — SMTP test email',
+        text: `SMTP configuration is working correctly!\n\nThis test email was sent directly from your PrismoraWebs Admin Panel.\nActive Recipients: ${splitRecipients(cfg.to).join(', ')}`,
+      });
+    } catch (e) { return json({ error: e.message }, 502); }
     return json({ ok: true });
   }
   return json({ error: 'Not found' }, 404);

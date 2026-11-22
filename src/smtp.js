@@ -11,6 +11,33 @@ const b64 = (s) => b64bytes(enc.encode(s));
 const encWord = (s) => (/^[\x20-\x7e]*$/.test(s) ? s : `=?UTF-8?B?${b64(s)}?=`);
 const addr = (name, email) => (name ? `${encWord(clean(name).replace(/["<>]/g, ''))} <${clean(email)}>` : clean(email));
 
+export async function getSmtpConfig(env) {
+  let kvConfig = null;
+  if (env.CONTENT) {
+    try {
+      const raw = await env.CONTENT.get('smtp_config');
+      if (raw) kvConfig = JSON.parse(raw);
+    } catch { /* fallback */ }
+  }
+  const host = kvConfig?.host || env.SMTP_HOST || '';
+  const port = parseInt(kvConfig?.port || env.SMTP_PORT || '465', 10);
+  const secure = kvConfig?.secure !== undefined
+    ? !!kvConfig.secure
+    : (env.SMTP_SECURE ? String(env.SMTP_SECURE).toLowerCase() === 'true' : port === 465);
+  const user = kvConfig?.user || env.SMTP_USER || '';
+  const pass = kvConfig?.pass || env.SMTP_PASS || '';
+  const from = kvConfig?.from || env.SMTP_FROM || user;
+  const fromName = kvConfig?.fromName || env.SMTP_FROM_NAME || 'PrismoraWebs';
+  const to = kvConfig?.to || env.CONTACT_TO || user;
+
+  return { host, port, secure, user, pass, from, fromName, to, configuredVia: kvConfig?.host ? 'admin' : (env.SMTP_HOST ? 'env' : 'none') };
+}
+
+export async function isSmtpConfigured(env) {
+  const c = await getSmtpConfig(env);
+  return !!(c.host && c.user && c.pass && c.from && c.to);
+}
+
 export function smtpConfig(env) {
   const port = parseInt(env.SMTP_PORT || '465', 10);
   return {
@@ -99,7 +126,29 @@ export async function sendViaConnect(connect, cfg, msg) {
 }
 
 export async function sendMail(env, msg) {
-  if (!smtpConfigured(env)) throw new Error('SMTP is not configured');
-  const { connect } = await import('cloudflare:sockets');
-  return sendViaConnect(connect, smtpConfig(env), { to: smtpConfig(env).to, ...msg });
+  const cfg = await getSmtpConfig(env);
+  if (!cfg.host || !cfg.user || !cfg.pass || !cfg.from || !cfg.to) throw new Error('SMTP is not configured yet. Configure it in the Admin panel.');
+  let connect;
+  try {
+    ({ connect } = await import('cloudflare:sockets'));
+  } catch {
+    const net = await import('node:net');
+    const tls = await import('node:tls');
+    const { Readable, Writable } = await import('node:stream');
+    connect = ({ hostname, port }, opts = {}) => {
+      const isSecure = opts.secureTransport === 'on';
+      const s = isSecure ? tls.connect({ host: hostname, port, rejectUnauthorized: false }) : net.connect({ host: hostname, port });
+      const wrap = (sock) => ({
+        readable: Readable.toWeb(sock),
+        writable: Writable.toWeb(sock),
+        startTls() {
+          const tlsSock = tls.connect({ socket: sock, host: hostname, rejectUnauthorized: false });
+          return wrap(tlsSock);
+        },
+        close() { try { sock.destroy(); } catch {} },
+      });
+      return wrap(s);
+    };
+  }
+  return sendViaConnect(connect, cfg, { to: cfg.to, ...msg });
 }

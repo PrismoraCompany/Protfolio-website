@@ -105,17 +105,38 @@ window.PW_DEFAULTS = {
     enterDesktop: "Click to enter", enterMobile: "Tap again to enter",
     roomBack: "← BACK TO THE DOORS", roomLight: "LIGHT", roomHelp: "Drag to look around · Scroll or pinch to zoom · Tap the objects",
     roomScreen: "SCREEN", roomAbout: "ABOUT", roomFunctions: "FUNCTIONS", roomStack: "STACK", roomExit: "EXIT",
-    roomOpen: "OPEN LIVE WEBSITE ↗", roomFull: "VIEW FULL SCREEN", aboutTitle: "ABOUT THIS WEBSITE", functionsTitle: "FUNCTIONS", stackTitle: "TECH STACK",
+    roomOpen: "OPEN LIVE WEBSITE ↗", roomVisit: "VISIT SITE ↗", roomFull: "VIEW FULL SCREEN", aboutTitle: "ABOUT THIS WEBSITE", functionsTitle: "FUNCTIONS", stackTitle: "TECH STACK",
     exitTitle: "THANKS FOR VISITING", exitText: "Want a website like this? Let's build yours.", exitButton: "LET'S TALK",
     items: [
       { slug: "slayernodes", name: "SlayerNodes", plate: "WEBSITE", tagline: "BUILT BY PRISMORAWEBS", color: "#4b3fb8",
-        bullets: [],
-        description: "SlayerNodes is a live website designed and built by the PrismoraWebs team.",
-        functions: [],
-        tech: [],
-        facts: [{ label: "BUILT BY", value: "PrismoraWebs" }],
-        liveLink: "", shot: "" }
+        bullets: ["High-speed game & cloud server hosting", "Custom client management dashboard", "Ultra-low latency infrastructure"],
+        description: "SlayerNodes is a modern cloud server and game hosting platform designed, built and launched by PrismoraWebs. It combines high-performance infrastructure with an intuitive, clean interface.",
+        functions: [
+          { title: "Instant Deployment", text: "Automated provisioning with high-speed NVMe storage." },
+          { title: "Global DDoS Defense", text: "Enterprise mitigation network protecting all game nodes." },
+          { title: "Custom Dashboard", text: "Intuitive panel for real-time diagnostics and scaling." }
+        ],
+        tech: ["Cloudflare Workers", "Vanilla JavaScript", "Custom 3D Engine", "Modern CSS", "WebSockets"],
+        facts: [{ label: "BUILT BY", value: "PrismoraWebs" }, { label: "TYPE", value: "Cloud Platform" }, { label: "STATUS", value: "Live & Active" }],
+        liveLink: "https://slayernodes.com", links: [{ label: "VISIT SLAYERNODES ↗", url: "https://slayernodes.com" }], shot: "" }
     ]
+  },
+  ui: {
+    notFoundEyebrow: "ERROR 404", notFoundTitle: "Lost in the hallway",
+    notFoundText: "The door you tried doesn't exist. Let's get you back to the lobby.", notFoundButton: "BACK TO THE DOORS",
+    legalEyebrow: "LEGAL", backHome: "← BACK TO HOME",
+    privacyNote: "By sending this form you agree to our", privacyLinkText: "Privacy Policy",
+    deliverablesLabel: "DELIVERABLES:", exitPlate: "EXIT",
+    instagramLabel: "INSTAGRAM", twitterLabel: "TWITTER", linkedinLabel: "LINKEDIN", githubLabel: "GITHUB",
+    menuLabel: "Menu", closeLabel: "Close", scrollLabel: "Scroll down", teamImageAlt: "The PrismoraWebs team",
+    lookAroundLabel: "Look around", lightToggleLabel: "Toggle the light", fullScreenLabel: "View the website screenshot full screen",
+    nextLabel: "Next website", prevLabel: "Previous website"
+  },
+  features: {
+    roomDrag: "look",
+    doorsAutoSeconds: "4.8",
+    introAnimation: "yes",
+    customCursor: "yes"
   },
   marquee: { items: ["UI/UX", "WEB DESIGN", "DEVELOPMENT", "DIGITAL MARKETING", "BRANDING", "LANDING PAGES", "SEO", "E-COMMERCE"] },
   stats: { items: [

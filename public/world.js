@@ -31,14 +31,14 @@ X.legalHub = (C) => {
   X.meta(`${L.hub.title} — ${C.meta.brand}`, L.hub.intro, '/legal');
   const docs = ['privacy', 'terms', 'cookies', 'refund', 'disclaimer', 'accessibility'];
   const href = { privacy: '/privacy-policy', terms: '/terms-and-conditions', cookies: '/cookie-policy', refund: '/refund-policy', disclaimer: '/disclaimer', accessibility: '/accessibility' };
-  $('#app').innerHTML = `<div class="lg"><header class="lgh"><a class="logo" data-link href="/">${esc(C.meta.logoText)}<i></i></a><a class="back" data-link href="/">← BACK TO HOME</a></header>
-  <main class="lgm"><p class="eyebrow">LEGAL</p><h1>${esc(L.hub.title)}</h1><p class="lead">${esc(L.hub.intro)}</p>
+  $('#app').innerHTML = `<div class="lg"><header class="lgh"><a class="logo" data-link href="/">${esc(C.meta.logoText)}<i></i></a><a class="back" data-link href="/">${esc(C.ui.backHome)}</a></header>
+  <main class="lgm"><p class="eyebrow">${esc(C.ui.legalEyebrow)}</p><h1>${esc(L.hub.title)}</h1><p class="lead">${esc(L.hub.intro)}</p>
   <div class="lhub">${docs.map((k) => `<a class="lcard" data-link href="${href[k]}"><b>${esc(L[k].title)}</b><span>${esc(L[k].updated)}</span><p>${esc(L[k].intro.slice(0, 120))}…</p></a>`).join('')}</div></main>
   <footer class="lgf"><span>${esc(PW().copyright(C.footer))}</span><nav>${X.legalLinks(C)}</nav></footer></div>`;
 };
 X.notFound = () => {
   const { C, $, esc } = PW(); document.body.classList.add('legalpage'); X.meta(`Page not found — ${C.meta.brand}`, 'This page could not be found.', location.pathname, true);
-  $('#app').innerHTML = `<div class="lg"><header class="lgh"><a class="logo" data-link href="/">${esc(C.meta.logoText)}<i></i></a></header><main class="lgm nf"><p class="eyebrow">ERROR 404</p><h1>Lost in the hallway</h1><p class="lead">The door you tried doesn't exist. Let's get you back to the lobby.</p><a class="btn w dk" data-link href="/#doors">BACK TO THE DOORS</a></main></div>`;
+  $('#app').innerHTML = `<div class="lg"><header class="lgh"><a class="logo" data-link href="/">${esc(C.meta.logoText)}<i></i></a></header><main class="lgm nf"><p class="eyebrow">${esc(C.ui.notFoundEyebrow)}</p><h1>${esc(C.ui.notFoundTitle)}</h1><p class="lead">${esc(C.ui.notFoundText)}</p><a class="btn w dk" data-link href="/#doors">${esc(C.ui.notFoundButton)}</a></main></div>`;
 };
 
 /* =============== doors (home) =============== */
@@ -103,7 +103,7 @@ X.mid = (C) => {
  <div class="wgrid">${y.items.map((x, i) => `<article class="wy rv" style="--d:${(i % 3) * .1}s"><span class="wyn">0${i + 1}</span><h3>${esc(x.title)}</h3><p>${esc(x.text)}</p></article>`).join('')}</div></section>
 <section class="show" id="showcase"><div class="ph rv"><span>${esc(sc.heading)}</span></div>
  <div class="shwrap rv"><canvas id="shc" aria-hidden="true"></canvas></div>
- <div class="shcap"><button class="ar" id="shp" type="button" aria-label="Previous website">‹</button><div><b id="sht"></b><span id="shs"></span><em id="shn"></em><a class="shgo" id="shg" href="#">${esc(sc.enter)}</a></div><button class="ar" id="shnx" type="button" aria-label="Next website">›</button></div>
+ <div class="shcap"><button class="ar" id="shp" type="button" aria-label="${esc(PW().C.ui.prevLabel)}">‹</button><div><b id="sht"></b><span id="shs"></span><em id="shn"></em><a class="shgo" id="shg" href="#">${esc(sc.enter)}</a></div><button class="ar" id="shnx" type="button" aria-label="${esc(PW().C.ui.nextLabel)}">›</button></div>
  <p class="shhint">${esc(sc.hint)}</p>
  <ul class="srtext">${C.doors.items.map((x) => `<li><a data-link href="/work/${esc(x.slug)}">${esc(x.name)} — ${esc(x.plate)}</a></li>`).join('')}</ul></section>
 <section class="stats" id="stats"><div class="sgrid">${s.items.map((x, i) => `<div class="stat rv" style="--d:${i * .1}s"><b data-count="${esc(x.value)}">${esc(x.value)}</b><small>${esc(x.label)}</small></div>`).join('')}</div></section>
@@ -155,7 +155,7 @@ X.polish = () => {
   if (sp && $('.hero')) scrollers.push(() => { const H = document.documentElement.scrollHeight - innerHeight; sp.style.transform = `scaleX(${H > 0 ? clamp(scrollY / H) : 0})`; });
   else if (sp) sp.style.transform = 'scaleX(0)';
   const cur = $('#cur');
-  if (cur && matchMedia('(pointer:fine)').matches && !reduce && !document.body.classList.contains('roompage')) {
+  if (cur && PW().C.features.customCursor !== 'no' && matchMedia('(pointer:fine)').matches && !reduce && !document.body.classList.contains('roompage')) {
     let x = -50, y = -50, tx = -50, ty = -50, raf, big = false;
     on(window, 'pointermove', (e) => { if (e.pointerType !== 'mouse') return; tx = e.clientX; ty = e.clientY; cur.style.opacity = 1; const b = !!e.target.closest('a,button,[data-go],.door,.lcard,.svh'); if (b !== big) { big = b; cur.classList.toggle('big', b); } });
     const loop = () => { x += (tx - x) * .2; y += (ty - y) * .2; cur.style.transform = `translate(${x}px,${y}px)`; raf = requestAnimationFrame(loop); }; loop();
@@ -225,22 +225,57 @@ X.initShowcase = () => {
   on(cv, 'pointerup', up); on(cv, 'pointercancel', () => { drag = null; target = Math.round(pos); });
   on(cv, 'wheel', (e) => { if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) { e.preventDefault(); target += Math.sign(e.deltaX) * .35; target = target; clearTimeout(cv._w); cv._w = setTimeout(() => { target = Math.round(target); }, 140); } }, { passive: false });
   on(cv, 'mouseenter', () => { hover = true; }); on(cv, 'mouseleave', () => { hover = false; });
-  if (!reduce && n > 1) { const iv = setInterval(() => { if (vis && !hover && !drag) go(1); }, 4800); later(() => clearInterval(iv)); }
+  const autoMs = Math.round((parseFloat(PW().C.features.doorsAutoSeconds) || 0) * 1000);   // 0 = off
+  if (!reduce && n > 1 && autoMs >= 1000) { const iv = setInterval(() => { if (vis && !hover && !drag) go(1); }, autoMs); later(() => clearInterval(iv)); }
   if (n < 2) { ['#shp', '#shnx', '.shhint'].forEach((q) => { const e = $(q); if (e) e.style.display = 'none'; }); }
   caption(); draw();
 };
 
 /* =============== the 3D room =============== */
-const shot = (it) => IMG.test(it.shot || '')
-  ? `<img class="shotimg" src="${PW().esc(it.shot)}" alt="${PW().esc(it.name)} website screenshot" draggable="false">`
-  : `<div class="mshot" style="--c:${PW().col(it.color)}"><div class="mb"><i></i><i></i><i></i><span>${PW().esc(String(it.name).toLowerCase().replace(/[^a-z0-9]+/g, ''))}.com</span></div><div class="mh"><h4>${PW().esc(it.name)}</h4><p>${PW().esc(it.tagline || (it.bullets || []).slice(0, 2).join(' · '))}</p><u>${PW().esc(it.plate)}</u></div></div>`;
+const shot = (it, isLaptop = false) => {
+  const { esc, col, url } = PW();
+  const targetUrl = it.liveLink || (Array.isArray(it.links) && it.links[0]?.url) || '';
+  const domain = targetUrl ? targetUrl.replace(/^https?:\/\//i, '').replace(/\/.*$/, '') : (String(it.name).toLowerCase().replace(/[^a-z0-9]+/g, '') + '.com');
+  const hasImg = IMG.test(it.shot || '');
+
+  if (hasImg) {
+    return `<div class="shot-inner"><img class="shotimg" src="${esc(it.shot)}" alt="${esc(it.name)} website screenshot" draggable="false">
+      <div class="shot-bar">
+        <a class="mshot-visit" href="${url(targetUrl || '#')}" ${targetUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} data-visit="true"><span>VISIT SITE ↗</span></a>
+        <span class="url-hint">🔒 ${esc(domain)}</span>
+      </div>
+      <div class="screen-glare" aria-hidden="true"></div>
+    </div>`;
+  }
+
+  return `<div class="mshot" style="--c:${col(it.color)}">
+    <div class="mb">
+      <i class="dot red"></i><i class="dot yel"></i><i class="dot grn"></i>
+      <span class="url-pill"><i class="s-lock">🔒</i> ${esc(domain)}</span>
+      <span class="live-pill">● LIVE</span>
+    </div>
+    <div class="mh">
+      <h4>${esc(it.name)}</h4>
+      <p>${esc(it.tagline || (it.bullets || []).slice(0, 2).join(' · '))}</p>
+      <div class="mshot-cta">
+        <a class="mshot-visit ${isLaptop ? 'mini' : ''}" href="${url(targetUrl || '#')}" ${targetUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} data-visit="true"><span>VISIT SITE ↗</span></a>
+        <span class="mshot-badge">${esc(it.plate || 'WEBSITE')}</span>
+      </div>
+    </div>
+    <div class="screen-glare" aria-hidden="true"></div>
+  </div>`;
+};
 
 X.room = (slug) => {
   const { C, $, $$, esc, url, col, on, later, reduce, navigate, para, clamp, ease } = PW();
   const d = C.doors, it = d.items.find((x) => x.slug === slug); if (!it) return X.notFound();
   document.body.classList.add('roompage');
   X.meta(`${it.name} — ${C.meta.brand}`, String(it.description || it.tagline).split('\n')[0], '/work/' + slug);
-  const live = liveOk(it.liveLink);
+  const targetUrl = it.liveLink || (Array.isArray(it.links) && it.links[0]?.url) || '';
+  // "Visit site" buttons: the main live link + any number of extra links added in the admin panel
+  const links = [...(liveOk(it.liveLink) ? [{ label: d.roomOpen, url: it.liveLink }] : []),
+    ...(Array.isArray(it.links) ? it.links : []).filter((l) => l && liveOk(l.url)).map((l) => ({ label: l.label || d.roomVisit || d.roomOpen, url: l.url }))];
+  const btns = (cls) => links.map((l) => `<a class="${cls}" href="${url(l.url)}" target="_blank" rel="noopener noreferrer">${esc(l.label)}</a>`).join('');
   const facts = (it.facts || []).map((f) => `<div><dt>${esc(f.label)}</dt><dd>${esc(f.value)}</dd></div>`).join('');
   const fns = (it.functions || []).map((f, i) => `<button class="fn hs" type="button"><span>0${i + 1}</span><b>${esc(f.title)}</b><p>${esc(f.text)}</p></button>`).join('');
   const tech = (it.tech || []).map((t) => `<span>${esc(t)}</span>`).join('');
@@ -248,21 +283,54 @@ X.room = (slug) => {
  <div class="rbar"><a class="rback" data-link href="/#doors">${esc(d.roomBack)}</a><b class="rtitle">${esc(it.name)}</b><button class="rsw" id="rsw" aria-pressed="true"><i></i>${esc(d.roomLight)}</button></div>
  <div class="rstage" id="rstage"><div class="rcube" id="rcube">
   <div class="face f-back"><i class="dimmer"></i><div class="skirt"></div><div class="sign">${esc(it.name)}</div>
-   <button class="frame hs" id="shotbtn" aria-label="View the website screenshot full screen"><div class="shotbox">${shot(it)}</div></button>
-   <div class="plaque"><b>${esc(it.plate)}</b><span>${esc(it.tagline)}</span><div class="pbtns">${live ? `<a class="rbtn" href="${url(it.liveLink)}" target="_blank" rel="noopener noreferrer">${esc(d.roomOpen)}</a>` : ''}<button class="rbtn ghost" id="fullbtn" type="button">${esc(d.roomFull)}</button></div></div>
-   <button class="sconce hs l" type="button" aria-label="Toggle the light"><i></i></button><button class="sconce hs r" type="button" aria-label="Toggle the light"><i></i></button></div>
+   <div class="frame hs" id="shotbtn" role="button" tabindex="0" aria-label="${esc(PW().C.ui.fullScreenLabel)}">
+     <div class="frame-edge"></div>
+     <div class="shotbox">${shot(it, false)}</div>
+   </div>
+   <div class="plaque">
+     <div class="plaque-tag"><b>${esc(it.plate)}</b><span>${esc(it.tagline)}</span></div>
+     <div class="pbtns">
+       <a class="rbtn rbtn-visit" href="${url(targetUrl || '#')}" ${targetUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} data-visit="true">VISIT SITE ↗</a>
+       <button class="rbtn ghost" id="fullbtn" type="button">${esc(d.roomFull)}</button>
+     </div>
+   </div>
+   <button class="sconce hs l" type="button" aria-label="${esc(PW().C.ui.lightToggleLabel)}"><i class="s-light"></i><i class="s-beam"></i></button>
+   <button class="sconce hs r" type="button" aria-label="${esc(PW().C.ui.lightToggleLabel)}"><i class="s-light"></i><i class="s-beam"></i></button>
+  </div>
   <div class="face f-left"><i class="dimmer"></i><div class="skirt"></div><div class="board"><h2>${esc(d.aboutTitle)}</h2>${para(it.description)}${facts ? `<dl class="facts">${facts}</dl>` : ''}</div>
    <div class="exit"><h2>${esc(d.exitTitle)}</h2><p>${esc(d.exitText)}</p><button class="rbtn" id="exitcta" type="button">${esc(d.exitButton)}</button></div>
-   <button class="xdoor hs" id="xdoor" type="button" aria-label="${esc(d.roomBack)}"><span class="arch"><span class="leaf"><b class="plate">EXIT</b><i class="knob"></i></span></span></button></div>
+   <button class="xdoor hs" id="xdoor" type="button" aria-label="${esc(d.roomBack)}"><span class="arch"><span class="leaf"><b class="plate">${esc(PW().C.ui.exitPlate)}</b><i class="knob"></i></span></span></button></div>
   <div class="face f-right"><i class="dimmer"></i><div class="skirt"></div>${fns ? `<div class="peg"><h2>${esc(d.functionsTitle)}</h2><div class="fns">${fns}</div></div>` : ''}</div>
   <div class="face f-floor"><div class="rug">${tech ? `<h3>${esc(d.stackTitle)}</h3><div class="chips">${tech}</div>` : ''}</div></div>
-  <div class="face f-floor3d"><div class="laptop"><div class="lb"><span class="tp"></span></div><button class="lid hs" id="lidbtn" type="button" aria-label="View the website screenshot full screen"><div class="shotbox">${shot(it)}</div></button></div></div>
-  <div class="face f-ceil"></div><div class="face f-ceil3d"><button class="pend hs" id="pend" type="button" aria-label="Toggle the light"><i class="cord2"></i><i class="shade2"></i><i class="glow"></i></button></div>
+  <div class="face f-floor3d">
+    <div class="laptop">
+      <div class="lb"><span class="tp"></span><span class="kbd-glow"></span></div>
+      <div class="lid hs" id="lidbtn" role="button" tabindex="0" aria-label="${esc(PW().C.ui.fullScreenLabel)}">
+        <i class="cam-lens"></i>
+        <div class="shotbox">${shot(it, true)}</div>
+        <a class="lap-visit-pill" href="${url(targetUrl || '#')}" ${targetUrl ? 'target="_blank" rel="noopener noreferrer"' : ''} data-visit="true" title="Visit ${esc(it.name)}">
+          <span>VISIT SITE ↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+  <div class="face f-ceil"></div><div class="face f-ceil3d"><button class="pend hs" id="pend" type="button" aria-label="${esc(PW().C.ui.lightToggleLabel)}"><i class="cord2"></i><i class="shade2"></i><i class="glow"></i></button></div>
  </div></div>
- <nav class="rhud" aria-label="Look around">${[['screen', d.roomScreen], ['about', d.roomAbout], ['functions', d.roomFunctions], ['stack', d.roomStack], ['exit', d.roomExit]].map(([k, t]) => `<button data-j="${k}" type="button">${esc(t)}</button>`).join('')}</nav>
+ <nav class="rhud" aria-label="${esc(PW().C.ui.lookAroundLabel)}">
+   ${[['screen', d.roomScreen], ['about', d.roomAbout], ['functions', d.roomFunctions], ['stack', d.roomStack], ['exit', d.roomExit]].map(([k, t]) => `<button class="${k === 'screen' ? 'on' : ''}" data-j="${k}" type="button">${esc(t)}</button>`).join('')}
+   ${targetUrl ? `<a class="rhud-visit" href="${url(targetUrl)}" target="_blank" rel="noopener noreferrer" data-visit="true">VISIT SITE ↗</a>` : ''}
+ </nav>
+ ${links.length ? `<div class="rvisit" id="rvisit">${btns('rbtn')}</div>` : ''}
  <p class="rhelp">${esc(d.roomHelp)}</p>
- <div class="lbx" id="lbx" hidden><button class="lbc" type="button" aria-label="Close">×</button><div class="lbi">${shot(it)}</div>${live ? `<a class="rbtn" href="${url(it.liveLink)}" target="_blank" rel="noopener noreferrer">${esc(d.roomOpen)}</a>` : ''}</div>
- <section class="srtext"><h1>${esc(it.name)} — ${esc(it.plate)}</h1><p>${esc(it.tagline)}</p>${para(it.description)}${(it.functions || []).length ? `<h2>${esc(d.functionsTitle)}</h2><ul>${it.functions.map((f) => `<li><b>${esc(f.title)}</b>: ${esc(f.text)}</li>`).join('')}</ul>` : ''}${(it.tech || []).length ? `<p>${esc(it.tech.join(', '))}</p>` : ''}${live ? `<a href="${url(it.liveLink)}">${esc(d.roomOpen)}</a>` : ''}</section>
+ <div class="lbx" id="lbx" hidden>
+   <button class="lbc" type="button" aria-label="${esc(PW().C.ui.closeLabel)}">×</button>
+   <div class="lbi">${shot(it)}</div>
+   <div class="lbl">
+     ${targetUrl ? `<a class="rbtn rbtn-visit" href="${url(targetUrl)}" target="_blank" rel="noopener noreferrer" data-visit="true">OPEN LIVE SITE ↗</a>` : ''}
+     ${btns('rbtn')}
+   </div>
+ </div>
+ <section class="srtext"><h1>${esc(it.name)} — ${esc(it.plate)}</h1><p>${esc(it.tagline)}</p>${para(it.description)}${(it.functions || []).length ? `<h2>${esc(d.functionsTitle)}</h2><ul>${it.functions.map((f) => `<li><b>${esc(f.title)}</b>: ${esc(f.text)}</li>`).join('')}</ul>` : ''}${(it.tech || []).length ? `<p>${esc(it.tech.join(', '))}</p>` : ''}${links.map((l) => `<a href="${url(l.url)}">${esc(l.label)}</a>`).join(' ')}</section>
 </div>`;
 
   const room = $('#room'), stage = $('#rstage'), cube = $('#rcube'), lbx = $('#lbx');
@@ -281,29 +349,49 @@ X.room = (slug) => {
   };
   apply(); raf = requestAnimationFrame(loop); later(() => cancelAnimationFrame(raf)); goto(0, 3, innerWidth < innerHeight ? 1.5 : 1, 1700);
   const spots = { screen: [0, 2, 1], about: [-38, 2, .78], functions: [38, 2, .78], stack: [0, -34, 1], exit: [-27, 2, .9] };
-  $$('.rhud button').forEach((b) => on(b, 'click', () => { const [y, p, z] = spots[b.dataset.j]; goto(y, p, (z || 1) * (innerWidth < innerHeight ? 1.45 : 1), 1000); }));
+  $$('.rhud button').forEach((b) => on(b, 'click', () => {
+    $$('.rhud button').forEach((x) => x.classList.remove('on'));
+    b.classList.add('on');
+    const [y, p, z] = spots[b.dataset.j];
+    goto(y, p, (z || 1) * (innerWidth < innerHeight ? 1.45 : 1), 1000);
+  }));
   on(window, 'resize', apply);
 
   on(room, 'pointerdown', (e) => {
-    if (e.target.closest('.rhud,.rbar,.lbx')) return;
+    if (e.target.closest('.rhud,.rbar,.lbx,.rvisit,.lap-visit-pill,.mshot-visit,.rbtn-visit,.wb-visit-action,[data-visit]')) return;
     pts.set(e.pointerId, [e.clientX, e.clientY]); drag = true; moved = 0; tw = null; vy = vp = 0;
     if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a[0] - b[0], a[1] - b[1]); z0 = zoom; }
   });
   on(window, 'pointermove', (e) => {
     if (!pts.has(e.pointerId)) return; const o = pts.get(e.pointerId); const dx = e.clientX - o[0], dy = e.clientY - o[1]; pts.set(e.pointerId, [e.clientX, e.clientY]);
     if (pts.size === 2) { const [a, b] = [...pts.values()]; zoom = clamp(z0 * Math.hypot(a[0] - b[0], a[1] - b[1]) / (pinch || 1), .6, 2.6); moved = 99; return; }
-    moved += Math.abs(dx) + Math.abs(dy); const k = .2 / Math.sqrt(zoom); yaw -= dx * k; pitch += dy * k; vy = -dx * k; vp = dy * k;
+    moved += Math.abs(dx) + Math.abs(dy); const k = .2 / Math.sqrt(zoom), s = PW().C.features.roomDrag === 'grab' ? -1 : 1;   // s=1: look (like the arrow keys), s=-1: grab the room
+    yaw += s * dx * k; pitch -= s * dy * k; vy = s * dx * k; vp = -s * dy * k;
   });
   const up = (e) => { pts.delete(e.pointerId); if (!pts.size) drag = false; };
   on(window, 'pointerup', up); on(window, 'pointercancel', up);
-  on(room, 'click', (e) => { if (moved > 7) { e.stopPropagation(); e.preventDefault(); moved = 0; } }, true);
+  on(room, 'click', (e) => {
+    const v = e.target.closest('[data-visit="true"]');
+    if (v) {
+      e.stopPropagation();
+      if (!targetUrl) {
+        e.preventDefault();
+        alert('Website link not set yet. Configure it in Admin → Doors & rooms.');
+      }
+      return;
+    }
+    if (moved > 7) { e.stopPropagation(); e.preventDefault(); moved = 0; }
+  }, true);
   on(room, 'wheel', (e) => { e.preventDefault(); zoom = clamp(zoom * (1 - e.deltaY * .001), .6, 2.6); tw = null; }, { passive: false });
   on(window, 'keydown', (e) => {
     if (e.key === 'Escape') { if (!lbx.hidden) lbx.hidden = true; return; }
     const m = { ArrowLeft: [-1.2, 0], ArrowRight: [1.2, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.key]; if (m) { vy = m[0]; vp = m[1]; tw = null; }
   });
 
-  const openBox = () => { lbx.hidden = false; };
+  const openBox = (e) => {
+    if (e.target.closest('[data-visit="true"]')) return;
+    lbx.hidden = false;
+  };
   ['shotbtn', 'fullbtn', 'lidbtn'].forEach((id) => on($('#' + id), 'click', openBox));
   on($('.lbc'), 'click', () => { lbx.hidden = true; }); on(lbx, 'click', (e) => { if (e.target === lbx) lbx.hidden = true; });
   const light = () => { const dim = room.classList.toggle('dim'); $('#rsw').setAttribute('aria-pressed', String(!dim)); };

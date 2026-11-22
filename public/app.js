@@ -105,7 +105,7 @@ const heroPeople = (h) => {
   const ppl = (h.people || []).filter((p) => p && p.name);
   if (!ppl.length) return `<img class="sil photo" src="${esc(h.personImage)}" alt="" draggable="false">`;
   const ar = Math.max(.5, Math.min(4, parseFloat(h.personRatio) || 1.79));
-  return `<div class="hpw" style="--ar:${ar}"><img class="hpimg" src="${esc(h.personImage)}" alt="The PrismoraWebs team" draggable="false">
+  return `<div class="hpw" style="--ar:${ar}"><img class="hpimg" src="${esc(h.personImage)}" alt="${esc(C.ui.teamImageAlt)}" draggable="false">
 ${ppl.map((p, i) => `<button class="hpz" type="button" data-i="${i}" style="left:${pc(p.left, 0)}%;right:${100 - pc(p.right, 100)}%" aria-label="${esc(p.name)} — ${esc(p.role)}"></button>`).join('')}
 ${ppl.map((p, i) => `<div class="hpt" data-i="${i}" style="left:${pc(p.x, 50)}%;top:${pc(p.top, 0)}%" role="tooltip"><b>${esc(p.name)}</b><i>${esc(p.role)}</i><small>${esc(p.desc)}</small></div>`).join('')}</div>`;
 };
@@ -129,11 +129,11 @@ function homeHTML() {
 <header class="nav" id="nav"><a class="logo" data-go="home" href="/">${esc(m.logoText)}<i></i></a>
  <nav class="npill" aria-label="Main">${links.map(([id, t]) => `<a href="/#${id}" data-go="${id}" data-s="${id}">${esc(t)}</a>`).join('')}</nav>
  <div class="nsoc">${socials.map(([k, u]) => `<a href="${url(u)}" ${k === 'mail' ? '' : 'target="_blank" rel="noopener noreferrer"'} aria-label="${k}">${ic(k)}</a>`).join('')}</div>
- <button class="burger" id="bg" aria-label="Menu">${ic('menu')}</button></header>
-<div id="menu" class="menu"><button class="mc" id="mclose" aria-label="Close">${ic('close')}</button>${links.map(([id, t]) => `<a href="/#${id}" data-go="${id}">${esc(t)}</a>`).join('')}<a href="#" data-open-contact>${esc(c.contactButton)}</a></div>
+ <button class="burger" id="bg" aria-label="${esc(C.ui.menuLabel)}">${ic('menu')}</button></header>
+<div id="menu" class="menu"><button class="mc" id="mclose" aria-label="${esc(C.ui.closeLabel)}">${ic('close')}</button>${links.map(([id, t]) => `<a href="/#${id}" data-go="${id}">${esc(t)}</a>`).join('')}<a href="#" data-open-contact>${esc(c.contactButton)}</a></div>
 <main>
 <section class="hero${h.textTheme === 'light' && heroCustom(h) ? ' ht' : ''}${h.showSilhouette === 'no' ? ' nosil' : ''}${heroCustom(h) ? ' hc' : ''}" id="home" style="${heroStyle(h)}"><h1><span class="l1">${esc(h.line1)}</span><span class="l2">${esc(h.line2)}</span></h1>${IMGRE.test(h.personImage || '') ? heroPeople(h) : SIL}
- <div class="hl"><span>${esc(h.est)}</span><button class="circ" data-go="about" aria-label="Scroll down">${ic('arrow')}</button></div>
+ <div class="hl"><span>${esc(h.est)}</span><button class="circ" data-go="about" aria-label="${esc(C.ui.scrollLabel)}">${ic('arrow')}</button></div>
  <div class="hr"><p>${esc(h.blurb)}</p><ul class="tags" id="tags">${h.tags.map((t, i) => `<li class="${i ? '' : 'on'}">${esc(t)}</li>`).join('')}</ul></div></section>
 
 <section class="about" id="about"><div class="st"><div class="apaint" aria-hidden="true"><i class="astars"></i><i class="aw aw1"></i><i class="aw aw2"></i><i class="aw aw3"></i><i class="aw aw4"></i><i class="amoon m1"></i><i class="amoon m2"></i><i class="amoon m3"></i></div>${CASTLE}
@@ -154,11 +154,11 @@ ${X().doors(C)}
 ${X().mid(C)}
 <section class="serv" id="services"><h2>${esc(s.title)}</h2><p class="ss">${esc(s.subtitle)}</p>
  <div class="acc" id="acc">${s.items.map((x, i) => `<div class="sv ${i ? '' : 'open'}"><button class="svh" aria-expanded="${i ? 'false' : 'true'}"><span>${esc(x.name)}</span>${ic('chev')}</button>
-  <div class="svb"><div class="svi"><p>${esc(x.text)}</p><div class="dl">DELIVERABLES: ${esc(x.deliverables)}</div><div class="tl">${(x.tools || []).map((t) => `<span>${esc(t)}</span>`).join('')}</div></div></div></div>`).join('')}</div></section>
+  <div class="svb"><div class="svi"><p>${esc(x.text)}</p><div class="dl">${esc(C.ui.deliverablesLabel)} ${esc(x.deliverables)}</div><div class="tl">${(x.tools || []).map((t) => `<span>${esc(t)}</span>`).join('')}</div></div></div></div>`).join('')}</div></section>
 ${X().late(C)}
 </main>
 <footer class="foot" id="contact"><div class="fin"><h2 class="chrome">${esc(c.title)}</h2>
- <div class="fb">${[['INSTAGRAM', so.instagram], ['TWITTER', so.twitter], ['LINKEDIN', so.linkedin], ['GITHUB', so.github]].map(([t, u]) => `<a class="pill" href="${url(u)}" target="_blank" rel="noopener noreferrer"><span data-t="${t}">${t}</span></a>`).join('')}<a class="pill solid" href="#" data-open-contact><span data-t="${esc(c.contactButton)}">${esc(c.contactButton)}</span></a></div></div>
+ <div class="fb">${[[C.ui.instagramLabel, so.instagram], [C.ui.twitterLabel, so.twitter], [C.ui.linkedinLabel, so.linkedin], [C.ui.githubLabel, so.github]].map(([t, u]) => `<a class="pill" href="${url(u)}" target="_blank" rel="noopener noreferrer"><span data-t="${t}">${t}</span></a>`).join('')}<a class="pill solid" href="#" data-open-contact><span data-t="${esc(c.contactButton)}">${esc(c.contactButton)}</span></a></div></div>
  <div class="fgrid">
   <div class="fcol fbrand"><b class="flogo">${esc(m.logoText)}<i></i></b><p>${esc(f.tagline)}</p><a class="femail" href="mailto:${esc(m.contactEmail)}">${esc(m.contactEmail)}</a></div>
   <div class="fcol"><h4>${esc(f.exploreTitle)}</h4>${links.map(([id, t]) => `<a href="/#${id}" data-go="${id}">${esc(t)}</a>`).join('')}</div>
@@ -166,7 +166,7 @@ ${X().late(C)}
   <div class="fcol"><h4>${esc(f.contactTitle)}</h4><a href="mailto:${esc(m.contactEmail)}">${esc(m.contactEmail)}</a><a href="#" data-open-contact>${esc(f.startLabel)}</a>${[['Instagram', so.instagram], ['X / Twitter', so.twitter], ['LinkedIn', so.linkedin], ['GitHub', so.github]].map(([t, u]) => `<a href="${url(u)}" target="_blank" rel="noopener noreferrer">${t}</a>`).join('')}</div>
  </div>
  <div class="fbar"><span>${esc(copyright(f))}</span><span>${esc(f.right)}</span></div></footer>
-<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="mbox"><button class="mx" id="mx" aria-label="Close">${ic('close')}</button>
+<div class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="mt"><div class="mbox"><button class="mx" id="mx" aria-label="${esc(C.ui.closeLabel)}">${ic('close')}</button>
  <h3 id="mt">${esc(c.formTitle)}</h3><p class="msub">${esc(c.formSubtitle)}</p>
  <form id="cf" novalidate><label>${esc(c.nameLabel)}<input name="name" autocomplete="name" maxlength="100" required></label>
  <label>${esc(c.emailLabel)}<input name="email" type="email" autocomplete="email" maxlength="200" required></label>
@@ -174,7 +174,7 @@ ${X().late(C)}
  <label>${esc(c.messageLabel)}<textarea name="message" rows="4" maxlength="4000" placeholder="${esc(c.messagePlaceholder)}" required></textarea></label>
  <input class="hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
  <button class="btn w full" type="submit">${esc(c.sendButton)}</button><p class="fs" id="fs" role="status"></p>
- <p class="fine">By sending this form you agree to our <a data-link href="/privacy-policy">Privacy Policy</a>.</p></form></div></div>`;
+ <p class="fine">${esc(C.ui.privacyNote)} <a data-link href="/privacy-policy">${esc(C.ui.privacyLinkText)}</a>.</p></form></div></div>`;
 }
 
 function home() {
@@ -185,7 +185,7 @@ function home() {
 
   /* loader */
   const ld = $('#ld'); let seen = false; try { seen = sessionStorage.getItem('pw_seen') === '1'; } catch { /* private mode */ }
-  if (seen || reduce) { ld.remove(); start(); }
+  if (seen || reduce || C.features.introAnimation === 'no') { ld.remove(); start(); }
   else {
     document.body.classList.add('lock');
     const path = $('#ldp'), dot = $('#ldd'), len = path.getTotalLength(); path.style.strokeDasharray = len;
@@ -320,8 +320,8 @@ function initContact() {
 function legal(key) {
   const L = C.legal[key]; const f = C.footer;
   X().meta(`${L.title} — ${C.meta.brand}`, L.intro, location.pathname); document.body.classList.add('legalpage');
-  app.innerHTML = `<div class="lg"><header class="lgh"><a class="logo" data-link href="/">${esc(C.meta.logoText)}<i></i></a><a class="back" data-link href="/">← BACK TO HOME</a></header>
-  <main class="lgm"><p class="eyebrow">LEGAL</p><h1>${esc(L.title)}</h1><p class="upd">${esc(L.updated)}</p><p class="lead">${esc(L.intro)}</p>
+  app.innerHTML = `<div class="lg"><header class="lgh"><a class="logo" data-link href="/">${esc(C.meta.logoText)}<i></i></a><a class="back" data-link href="/">${esc(C.ui.backHome)}</a></header>
+  <main class="lgm"><p class="eyebrow">${esc(C.ui.legalEyebrow)}</p><h1>${esc(L.title)}</h1><p class="upd">${esc(L.updated)}</p><p class="lead">${esc(L.intro)}</p>
   ${L.sections.map((s) => `<section><h2>${esc(s.heading)}</h2>${para(s.body)}</section>`).join('')}</main>
   <footer class="lgf"><span>${esc(copyright(f))}</span><nav>${X().legalLinks(C)}</nav></footer></div>`;
   scrollTo(0, 0);

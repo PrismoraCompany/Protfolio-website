@@ -44,7 +44,7 @@ env.ASSETS = {
   },
 };
 
-const { default: worker } = await import('../src/worker.js');
+const { default: worker, generateTimeCode } = await import('../src/worker.js');
 
 http.createServer(async (req, res) => {
   try {
@@ -56,4 +56,10 @@ http.createServer(async (req, res) => {
     const sc = r.headers.getSetCookie?.(); if (sc?.length) out['set-cookie'] = sc;
     res.writeHead(r.status, out); res.end(Buffer.from(await r.arrayBuffer()));
   } catch (e) { console.error(e); res.writeHead(500); res.end('Server error'); }
-}).listen(PORT, () => console.log(`\n  PrismoraWebs running ->  http://localhost:${PORT}\n  Admin               ->  http://localhost:${PORT}/control-of-the-website\n  (Ctrl+C to stop)\n`));
+}).listen(PORT, async () => {
+  const code = generateTimeCode ? await generateTimeCode(env.ADMIN_CODE_KEY || env.ADMIN_PASSWORD || 'prismora-secret-key-2025') : '------';
+  console.log(`\n  PrismoraWebs running ->  http://localhost:${PORT}`);
+  console.log(`  Admin Portal        ->  http://localhost:${PORT}/control-of-the-website`);
+  console.log(`  Admin Email         ->  ${env.ADMIN_EMAIL || 'prismorawebs@gmail.com'}`);
+  console.log(`  Live Security Code  ->  \x1b[1;32m[ ${code} ]\x1b[0m (changes every 60s; run 'npm run code')\n  (Ctrl+C to stop)\n`);
+});

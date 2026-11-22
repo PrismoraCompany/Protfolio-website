@@ -8,13 +8,17 @@ Cinematic monochrome portfolio for PrismoraWebs, running on **Cloudflare Workers
 * Contact form -> your inbox through **SMTP** (Gmail or any provider)
 
 ## How it is secured
-* Admin password is a Cloudflare **secret** (`ADMIN_PASSWORD`) — not in the code, not in the browser.
-* Login: constant-time check, 5 tries / 15 min / IP, signed 12-hour `HttpOnly; Secure; SameSite=Strict` session cookie.
+* Admin login requires **3-factor credentials**:
+  1. **Admin Email** (`ADMIN_EMAIL`, default `prismorawebs@gmail.com`).
+  2. **Admin Password** (`ADMIN_PASSWORD`, secret passphrase).
+  3. **Time-Based Rotating Security Code**: 6-digit code changing in a fixed cryptographic pattern every 60 seconds (HMAC-SHA256 with step tolerance). Run `npm run code` to view the live active code.
+* Login: constant-time checks on all credentials, 5 tries / 15 min / IP, signed **15-day** `HttpOnly; Secure; SameSite=Strict` session cookie (or until manual sign-out).
 * Every write needs the session cookie **and** a same-origin custom header (CSRF protection).
 * Strict Content-Security-Policy, HSTS, `X-Frame-Options: DENY`, `nosniff`, no-referrer-downgrade, permissions policy.
 * Admin page is `noindex` and never cached. The old `/admin` URL returns 404.
 * Contact form: honeypot, minimum-time check, 5 messages / hour / IP, size limits, header-injection protection.
-* SMTP credentials are secrets, never stored in KV or sent to the browser.
+* SMTP can be configured directly inside the Admin Panel UI (saved to database), eliminating the need to set Cloudflare Worker environment variables manually.
+* Multi-recipient support: `CONTACT_TO` allows multiple Gmail/email recipients separated by commas or semicolons to receive website enquiries simultaneously.
 
 ## Files
 ```

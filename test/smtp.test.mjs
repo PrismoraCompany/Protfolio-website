@@ -41,6 +41,12 @@ assert.equal(body, 'Line1\n.dot line\nनमस्ते 🙂', 'UTF-8 body + do
 assert.match(captured, /Reply-To: Vis Itor <visitor@y.com>/);
 assert.match(captured, /Subject: =\?UTF-8\?B\?/);
 
+// multiple recipients in CONTACT_TO (comma, semicolon, space separated)
+log.length = 0; captured = '';
+await sendViaConnect(connect, cfg, { to: 'team1@gmail.com, team2@gmail.com; team3@gmail.com', subject: 'Multi Enquiry', text: 'Hi all' });
+assert.deepEqual(log.filter((l) => !l.startsWith('cred')), ['EHLO', 'AUTH', 'MAIL', 'RCPT', 'RCPT', 'RCPT', 'DATA', 'QUIT'], 'Issues RCPT TO for each recipient');
+assert.match(captured, /To: team1@gmail.com, team2@gmail.com, team3@gmail.com/);
+
 // header injection is neutralised
 const evil = buildMessage(cfg, { to: 'a@b.com', subject: 'x\r\nBcc: spy@evil.com', replyTo: 'v@y.com\r\nBcc: spy@evil.com', text: 'hi' });
 assert.ok(!/^Bcc:/mi.test(evil), 'no injected headers');

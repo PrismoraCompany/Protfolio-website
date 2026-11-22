@@ -7,8 +7,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "node test/smtp.test.mjs",
-    "local": "node --import ./local/register.mjs local/server.mjs"
+    "test": "node test/auth.test.mjs && node test/smtp.test.mjs",
+    "local": "node --import ./local/register.mjs local/server.mjs",
+    "code": "node scripts/admin-code.mjs"
   },
   "devDependencies": {
     "wrangler": "^4.45.0"
