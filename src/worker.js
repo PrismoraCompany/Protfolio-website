@@ -42,25 +42,37 @@ async function safeEqual(a, b) { // constant-time comparison of two strings
   return d === 0;
 }
 
-/* ---------- time-based patterned security code (rotates every 60 seconds) ---------- */
-export async function generateTimeCode(secret, stepOffset = 0) {
-  const step = Math.floor(Date.now() / 60000) + stepOffset;
-  const rawKey = await crypto.subtle.digest('SHA-256', enc.encode(`pw-totp-v1|${secret}`));
-  const key = await crypto.subtle.importKey('raw', rawKey, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
-  const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`step:${step}`));
-  const view = new DataView(sig);
-  const code = ((view.getUint32(0) >>> 0) % 900000 + 100000).toString();
-  return code;
+/* ---------- time-based patterned security code (matches 24h clock: HHMM) ---------- */
+export function generateTimeCode(timestamp = Date.now(), tzOffsetMinutes = 0, minuteOffset = 0) {
+  const d = new Date(timestamp + minuteOffset * 60000);
+  if (typeof tzOffsetMinutes === 'number') {
+    const local = new Date(d.getTime() - tzOffsetMinutes * 60000);
+    const h = String(local.getUTCHours()).padStart(2, '0');
+    const m = String(local.getUTCMinutes()).padStart(2, '0');
+    return `${h}${m}`;
+  }
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}${m}`;
 }
 
-export async function verifyTimeCode(code, secret) {
+export async function verifyTimeCode(code, tzOffset = null) {
   if (!code || typeof code !== 'string') return false;
   const cleanCode = code.trim().replace(/\s+/g, '');
-  if (!/^\d{6}$/.test(cleanCode)) return false;
-  // Check current minute window, -1 window, and +1 window (grace period for slight clock drift)
-  for (const offset of [0, -1, 1]) {
-    const expected = await generateTimeCode(secret, offset);
-    if (await safeEqual(cleanCode, expected)) return true;
+  if (!/^\d{4}$/.test(cleanCode)) return false;
+
+  const offsets = [];
+  if (typeof tzOffset === 'number' && !isNaN(tzOffset)) offsets.push(tzOffset);
+  if (!offsets.includes(0)) offsets.push(0);         // UTC
+  if (!offsets.includes(-330)) offsets.push(-330);   // IST (+05:30)
+
+  const now = Date.now();
+  // Check current minute (0), previous minute (-1), and next minute (+1) for clock drift grace period
+  for (const minOff of [0, -1, 1]) {
+    for (const tz of offsets) {
+      const expected = generateTimeCode(now, tz, minOff);
+      if (await safeEqual(cleanCode, expected)) return true;
+    }
   }
   return false;
 }
@@ -194,10 +206,11 @@ async function api(request, env, url) {
     const inputEmail = str(body.email, 200).toLowerCase();
     const inputPass = str(body.password, 200);
     const inputCode = str(body.code, 20);
+    const tz = typeof body.tz === 'number' ? body.tz : null;
 
     const emailOk = await safeEqual(inputEmail, adminEmail);
     const passOk = await safeEqual(inputPass, env.ADMIN_PASSWORD);
-    const codeOk = await verifyTimeCode(inputCode, env.ADMIN_CODE_KEY || env.ADMIN_PASSWORD);
+    const codeOk = await verifyTimeCode(inputCode, tz);
 
     if (!emailOk || !passOk) {
       await new Promise((r) => setTimeout(r, 400 + Math.random() * 400));
@@ -205,7 +218,7 @@ async function api(request, env, url) {
     }
     if (!codeOk) {
       await new Promise((r) => setTimeout(r, 300 + Math.random() * 300));
-      return json({ error: 'Invalid or expired 6-digit security code. Check the current code.' }, 401);
+      return json({ error: 'Invalid security code. Code must match current 24-hour clock time (e.g. 0959 or 1849).' }, 401);
     }
 
     return json({ ok: true }, 200, { 'set-cookie': cookie(await makeToken(env), SESSION_SECONDS) });

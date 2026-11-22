@@ -11,7 +11,7 @@ Cinematic monochrome portfolio for PrismoraWebs, running on **Cloudflare Workers
 * Admin login requires **3-factor credentials**:
   1. **Admin Email** (`ADMIN_EMAIL`, default `prismorawebs@gmail.com`).
   2. **Admin Password** (`ADMIN_PASSWORD`, secret passphrase).
-  3. **Time-Based Rotating Security Code**: 6-digit code changing in a fixed cryptographic pattern every 60 seconds (HMAC-SHA256 with step tolerance). Run `npm run code` to view the live active code.
+  3. **Time-Based Clock Security Code**: 4-digit code matching the current 24-hour clock time (HHMM, e.g. 09:59 → `0959`, 18:49 → `1849`). Automatically syncs with your clock with minute-drift grace period.
 * Login: constant-time checks on all credentials, 5 tries / 15 min / IP, signed **15-day** `HttpOnly; Secure; SameSite=Strict` session cookie (or until manual sign-out).
 * Every write needs the session cookie **and** a same-origin custom header (CSRF protection).
 * Strict Content-Security-Policy, HSTS, `X-Frame-Options: DENY`, `nosniff`, no-referrer-downgrade, permissions policy.

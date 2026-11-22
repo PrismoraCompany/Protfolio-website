@@ -57,9 +57,11 @@ http.createServer(async (req, res) => {
     res.writeHead(r.status, out); res.end(Buffer.from(await r.arrayBuffer()));
   } catch (e) { console.error(e); res.writeHead(500); res.end('Server error'); }
 }).listen(PORT, async () => {
-  const code = generateTimeCode ? await generateTimeCode(env.ADMIN_CODE_KEY || env.ADMIN_PASSWORD || 'prismora-secret-key-2025') : '------';
+  const d = new Date();
+  const timeStr = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const code = generateTimeCode ? generateTimeCode() : timeStr.replace(':', '');
   console.log(`\n  PrismoraWebs running ->  http://localhost:${PORT}`);
   console.log(`  Admin Portal        ->  http://localhost:${PORT}/control-of-the-website`);
   console.log(`  Admin Email         ->  ${env.ADMIN_EMAIL || 'prismorawebs@gmail.com'}`);
-  console.log(`  Live Security Code  ->  \x1b[1;32m[ ${code} ]\x1b[0m (changes every 60s; run 'npm run code')\n  (Ctrl+C to stop)\n`);
+  console.log(`  Live Time Code      ->  \x1b[1;32m[ ${code} ]\x1b[0m (matches your clock: ${timeStr})\n  (Ctrl+C to stop)\n`);
 });
