@@ -54,20 +54,17 @@ const prep = (d) => { (d.doors?.items || []).forEach((r) => { if (!Array.isArray
 const blank = (o) => (Array.isArray(o) ? [] : isObj(o) ? Object.fromEntries(Object.entries(o).map(([k, v]) => [k, k === 'color' ? v : blank(v)])) : '');
 
 function loginHTML(configured, emailHint) {
-  const d = new Date();
-  const sample = `${String(d.getHours()).padStart(2, '0')}${String(d.getMinutes()).padStart(2, '0')}`;
-  return `<div class="adm alg"><form class="acardl" id="lf"><h1>Admin sign in</h1><p>${configured ? 'Sign in with your admin email, password and current clock time.' : 'The admin password has not been set on the server yet. In Cloudflare: Worker → Settings → Variables and Secrets → add a secret named <code class="k">ADMIN_PASSWORD</code>.'}</p>
+  return `<div class="adm alg"><form class="acardl" id="lf"><h1>Admin sign in</h1><p>${configured ? 'Sign in with your admin credentials to access the panel.' : 'The admin password has not been set on the server yet. In Cloudflare: Worker → Settings → Variables and Secrets → add a secret named <code class="k">ADMIN_PASSWORD</code>.'}</p>
   <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:14px">
     <div><label style="display:block;font:600 11px var(--mono);color:#9a9aa2;margin-bottom:5px">ADMIN EMAIL</label>
     <input class="in-a" id="em" type="email" placeholder="${esc(emailHint || 'prismorawebs@gmail.com')}" autocomplete="username" ${configured ? 'autofocus' : 'disabled'} required></div>
     <div><label style="display:block;font:600 11px var(--mono);color:#9a9aa2;margin-bottom:5px">ADMIN PASSWORD</label>
     <input class="in-a" id="pw" type="password" placeholder="Password" autocomplete="current-password" ${configured ? '' : 'disabled'} required></div>
-    <div><label style="display:block;font:600 11px var(--mono);color:#9a9aa2;margin-bottom:5px">4-DIGIT TIME CODE <small style="color:#71717a">(matches your current 24h clock: HHMM)</small></label>
-    <input class="in-a" id="cd" type="text" maxlength="4" pattern="[0-9]{4}" placeholder="${sample}" autocomplete="one-time-code" style="font-family:var(--mono);font-size:20px;letter-spacing:6px;text-align:center" ${configured ? '' : 'disabled'} required></div>
+    <div><label style="display:block;font:600 11px var(--mono);color:#9a9aa2;margin-bottom:5px">SECURITY CODE</label>
+    <input class="in-a" id="cd" type="text" maxlength="4" pattern="[0-9]{4}" placeholder="enter the code" autocomplete="one-time-code" style="font-family:var(--mono);font-size:15px;letter-spacing:2px;text-align:center" ${configured ? '' : 'disabled'} required></div>
   </div>
   <div class="aerr" id="er"></div>
-  <button class="abtn pr" style="width:100%;padding:12px" ${configured ? '' : 'disabled'}>Sign in</button>
-  <p style="margin-top:14px;font:500 11px/1.5 var(--mono);color:#9a9aa2;text-align:center">Code is your current clock time: e.g. 09:59 → <b style="color:#fff">0959</b> · 18:49 → <b style="color:#fff">1849</b></p></form></div>`;
+  <button class="abtn pr" style="width:100%;padding:12px" ${configured ? '' : 'disabled'}>Sign in</button></form></div>`;
 }
 function shell() {
   const body = cur === 'status' ? '<div id="statusbox">Loading…</div>' : `<h2>${esc(SECTIONS.find((s) => s[0] === cur)[1])}</h2><p class="hint2">Edit any line, then press <b>Save to live site</b>. Changes go live for every visitor.</p>${node([cur], draft[cur], cur, true)}`;

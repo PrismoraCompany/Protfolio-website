@@ -218,7 +218,7 @@ async function api(request, env, url) {
     }
     if (!codeOk) {
       await new Promise((r) => setTimeout(r, 300 + Math.random() * 300));
-      return json({ error: 'Invalid security code. Code must match current 24-hour clock time (e.g. 0959 or 1849).' }, 401);
+      return json({ error: 'Invalid security code.' }, 401);
     }
 
     return json({ ok: true }, 200, { 'set-cookie': cookie(await makeToken(env), SESSION_SECONDS) });
