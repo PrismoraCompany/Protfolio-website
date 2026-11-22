@@ -51,7 +51,15 @@ async function loadContent() {
   try {
     const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 2500);
     const r = await fetch('/api/content', { cache: 'no-cache', signal: ctl.signal }); clearTimeout(t);
-    if (r.ok) { const j = await r.json(); if (isObj(j)) C = merge(clone(D), j); }
+    if (r.ok) {
+      const j = await r.json();
+      if (isObj(j)) {
+        if (j.hero?.personImage && (j.hero.personImage.endsWith('.jpg') || j.hero.personImage.includes('57f47eb3'))) {
+          j.hero.personImage = '/hero-team.webp';
+        }
+        C = merge(clone(D), j);
+      }
+    }
   } catch { /* defaults are fine */ }
 }
 
@@ -103,9 +111,11 @@ const IMGRE = /^\/(?:api\/image\/)?[a-z0-9-]{3,60}\.(jpg|png|webp)$/;
 const pc = (v, d) => { const n = parseFloat(v); return Number.isFinite(n) ? Math.min(100, Math.max(0, n)) : d; };
 const heroPeople = (h) => {
   const ppl = (h.people || []).filter((p) => p && p.name);
-  if (!ppl.length) return `<img class="sil photo" src="${esc(h.personImage)}" alt="" draggable="false">`;
+  let src = h.personImage || '/hero-team.webp';
+  if (src.endsWith('.jpg') || src.includes('57f47eb3')) src = '/hero-team.webp';
+  if (!ppl.length) return `<img class="sil photo" src="${esc(src)}" alt="" draggable="false">`;
   const ar = Math.max(.5, Math.min(4, parseFloat(h.personRatio) || 1.79));
-  return `<div class="hpw" style="--ar:${ar}"><img class="hpimg" src="${esc(h.personImage)}" alt="${esc(C.ui.teamImageAlt)}" draggable="false">
+  return `<div class="hpw" style="--ar:${ar}"><img class="hpimg" src="${esc(src)}" alt="${esc(C.ui.teamImageAlt)}" draggable="false">
 ${ppl.map((p, i) => `<button class="hpz" type="button" data-i="${i}" style="left:${pc(p.left, 0)}%;right:${100 - pc(p.right, 100)}%" aria-label="${esc(p.name)} — ${esc(p.role)}"></button>`).join('')}
 ${ppl.map((p, i) => `<div class="hpt" data-i="${i}" style="left:${pc(p.x, 50)}%;top:${pc(p.top, 0)}%" role="tooltip"><b>${esc(p.name)}</b><i>${esc(p.role)}</i><small>${esc(p.desc)}</small></div>`).join('')}</div>`;
 };

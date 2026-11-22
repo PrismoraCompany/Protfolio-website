@@ -154,7 +154,17 @@ async function api(request, env, url) {
 
   if (path === '/api/content' && method === 'GET') {
     const raw = env.CONTENT ? await env.CONTENT.get('content') : null;
-    return new Response(raw || '{}', { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' } });
+    let out = raw || '{}';
+    if (raw && (raw.includes('.jpg') || raw.includes('57f47eb3'))) {
+      try {
+        const d = JSON.parse(raw);
+        if (d?.hero?.personImage && (d.hero.personImage.endsWith('.jpg') || d.hero.personImage.includes('57f47eb3'))) {
+          d.hero.personImage = '/hero-team.webp';
+          out = JSON.stringify(d);
+        }
+      } catch {}
+    }
+    return new Response(out, { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-cache' } });
   }
 
   const im = /^\/api\/image\/([a-z0-9-]{3,60}\.(?:jpg|png|webp))$/.exec(path);
